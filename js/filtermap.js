@@ -46,6 +46,7 @@ class FilterMap {
                     vis.selection.delete(d.properties.name);
                     d3.select(this)
                     .attr("fill","green")
+                    console.log(d.properties.name);
                 }else{
                     vis.selection.add(d.properties.name);
                     d3.select(this)
@@ -56,7 +57,7 @@ class FilterMap {
         var zoom = d3.zoom()
             .scaleExtent([1, 8])
             .on('zoom', function(event, d) {
-                grid.attr('transform', event.transform);
+                //grid.attr('transform', event.transform);
                 g.selectAll('path')
                 .attr('transform', event.transform);
             });
@@ -67,6 +68,6 @@ class FilterMap {
 
 var mapGlobal;
 
-d3.json('custom.geo.json').then(function(data){
+d3.json('custom.geo-copy.json').then(function(data){
     mapGlobal = new FilterMap('my_dataviz',data,undefined);
 });
