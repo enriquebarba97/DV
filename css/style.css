@@ -29,3 +29,12 @@ body {
   .countryLabelBg{
     fill: #30BCED;   /* country label background colour */
   }
+
+  .token {
+    background: olive;
+    margin-left: 2px;
+  }
+  
+  .token-content {
+    padding-right: 2px;
+  }

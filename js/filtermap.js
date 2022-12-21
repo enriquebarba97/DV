@@ -1,73 +1,147 @@
 class FilterMap {
-    constructor(parentId, geoData, teamData){
-        this.parentId = parentId;
-        this.geoData = geoData;
-        this.teamData = teamData;
+  constructor(parentId, geoData, teamData) {
+    this.parentId = parentId;
+    this.geoData = geoData;
+    this.teamData = teamData;
 
-        this.selection = new Set();
-        this.init();
+    this.selection = new Set();
+    this.selectedObjects = new Set();
+    this.init();
+  }
+
+  init() {
+    let vis = this;
+    let width = 960,
+      height = 500;
+
+    let projection = d3.geoMercator().center([0, 5]).scale(150);
+
+    vis.tokens = d3
+      .select("#" + this.parentId)
+      .append("div")
+      .attr("id", "tokens")
+      .attr("class", "wrapper");
+
+    this.tokens.selectAll('div')
+      .data(this.selection)
+      .enter()
+
+    vis.svg = d3
+      .select("#" + this.parentId)
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    var path = d3.geoPath().projection(projection);
+
+    // let grid = vis.svg.append("g").append("path")
+    //     .datum(d3.geoGraticule())
+    //     .attr("class", "graticule")
+    //     .attr('fill', '#fff')
+    //     .attr("stroke", "grey")
+    //     .attr("d", path);
+
+    var g = vis.svg.append("g");
+
+    // load and display the World
+    g.selectAll("path")
+      .data(this.geoData.features)
+      .enter()
+      .append("path")
+      .attr("id", d => d.properties.su_a3)
+      .attr("d", path)
+      .attr("fill", function (d) {
+        if (vis.teamData.some((t) => t.team_code === d.properties.su_a3)) {
+          return "green";
+        }
+        return "grey";
+      })
+      .attr("stroke-width", 0.3)
+      .attr("stroke", "#ff0000")
+      .on("click", function (event, d) {
+        let team = vis.teamData.find((t) => t.team_code == d.properties.su_a3);
+        if(team !== undefined){
+            vis.updateFilters(team);
+        }
+      });
+
+    var zoom = d3
+      .zoom()
+      .scaleExtent([1, 8])
+      .on("zoom", function (event, d) {
+        //grid.attr('transform', event.transform);
+        g.selectAll("path").attr("transform", event.transform);
+      });
+
+    vis.svg.call(zoom);
+  }
+
+  updateFilters(team) {
+    let vis = this;
+
+    let teamId = team.team_id;
+    let countryCode = team.team_code;
+
+    if (vis.selection.has(teamId)) {
+        vis.selectedObjects.delete(team);
+        vis.selection.delete(teamId);
+        d3.select('#' + countryCode).attr("fill", "green");
+    } else {
+        vis.selectedObjects.add(team);
+        vis.selection.add(teamId);
+        d3.select('#' + countryCode).attr("fill", "yellow");
     }
 
-    init() {
-        let vis = this;
-        let width = 960,
-        height = 500;
+    let tokenData = d3.select('#tokens')
+    .selectAll('div')
+    .data(this.selectedObjects)
 
-        let projection = d3.geoEckert4()
-        .center([0, 5 ])
-        .scale(150);
+    let tokenDivs = tokenData.enter()
+    .append('div')
+    .attr('class', 'token label')
+    .on('click', (event,d) => {
+        vis.updateFilters(d);
+    });
+    
+    tokenDivs.append('span')
+    .text(d => d.team_name)
+    .attr('class','token-content');
+    
+    tokenDivs.append('i')
+    .attr('class','glyphicon glyphicon-remove');
 
-        vis.svg = d3.select("#"+this.parentId).append("svg")
-        .attr("width", width)
-        .attr("height", height);
+    tokenData
+    .exit()
+    .remove();
+  }
 
-        var path = d3.geoPath()
-            .projection(projection);
+//   updateFilters(countryCode) {
+//     let vis = this;
 
-        // let grid = vis.svg.append("g").append("path")
-        //     .datum(d3.geoGraticule())
-        //     .attr("class", "graticule")
-        //     .attr('fill', '#fff')
-        //     .attr("stroke", "grey")
-        //     .attr("d", path);
+//     let tokenData = d3.select('#tokens')
+//     .selectAll('div')
+//     .data(this.selectedObjects)
 
-        var g = vis.svg.append("g");
+//     let tokenDivs = tokenData.enter()
+//     .append('div')
+//     .attr('class', 'token label')
+//     .on('click', (event,d) => {
+//         let teamId = d.team_id;
+//         vis.selectedObjects.delete(team);
+//         vis.selection.delete(teamId);
+//         d3.select(this).attr("fill", "green");
+//         vis.updateFilters();
+//     });
+    
+//     tokenDivs.append('span')
+//     .text(d => d.team_name)
+//     .attr('class','token-content');
+    
+//     tokenDivs.append('i')
+//     .attr('class','glyphicon glyphicon-remove');
 
-        // load and display the World
-        g.selectAll("path")
-            .data(this.geoData.features)
-            .enter().append("path")
-            .attr("d", path)
-            .attr("fill","green")
-            .attr("stroke-width", 0.3)
-            .attr("stroke", "#ff0000")
-            .on('click', function(event,d){
-                if(vis.selection.has(d.properties.name)){
-                    vis.selection.delete(d.properties.name);
-                    d3.select(this)
-                    .attr("fill","green")
-                    console.log(d.properties.name);
-                }else{
-                    vis.selection.add(d.properties.name);
-                    d3.select(this)
-                    .attr("fill","yellow")
-                }
-            });
-
-        var zoom = d3.zoom()
-            .scaleExtent([1, 8])
-            .on('zoom', function(event, d) {
-                //grid.attr('transform', event.transform);
-                g.selectAll('path')
-                .attr('transform', event.transform);
-            });
-
-        vis.svg.call(zoom);
-    }
+//     tokenData
+//     .exit()
+//     .remove();
+//   }
 }
-
-var mapGlobal;
-
-d3.json('custom.geo-copy.json').then(function(data){
-    mapGlobal = new FilterMap('my_dataviz',data,undefined);
-});
