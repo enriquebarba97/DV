@@ -94,7 +94,7 @@ class FilterMap {
 
     let tokenData = d3.select('#tokens')
     .selectAll('div')
-    .data(this.selectedObjects)
+    .data(this.selectedObjects,d => d.team_id)
 
     let tokenDivs = tokenData.enter()
     .append('div')
