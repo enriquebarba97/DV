@@ -1,8 +1,10 @@
 class FilterMap {
-  constructor(parentId, geoData, teamData) {
+  constructor(parentId, geoData, teamData, width, height) {
     this.parentId = parentId;
     this.geoData = geoData;
     this.teamData = teamData;
+    this.width = width;
+    this.height = height
 
     this.selection = new Set();
     this.selectedObjects = new Set();
@@ -11,8 +13,6 @@ class FilterMap {
 
   init() {
     let vis = this;
-    let width = 960,
-      height = 500;
 
     let projection = d3.geoMercator().center([0, 5]).scale(150);
 
@@ -29,8 +29,8 @@ class FilterMap {
     vis.svg = d3
       .select("#" + this.parentId)
       .append("svg")
-      .attr("width", width)
-      .attr("height", height);
+      .attr("width", this.width)
+      .attr("height", this.height);
 
     var path = d3.geoPath().projection(projection);
 
@@ -114,34 +114,4 @@ class FilterMap {
     .exit()
     .remove();
   }
-
-//   updateFilters(countryCode) {
-//     let vis = this;
-
-//     let tokenData = d3.select('#tokens')
-//     .selectAll('div')
-//     .data(this.selectedObjects)
-
-//     let tokenDivs = tokenData.enter()
-//     .append('div')
-//     .attr('class', 'token label')
-//     .on('click', (event,d) => {
-//         let teamId = d.team_id;
-//         vis.selectedObjects.delete(team);
-//         vis.selection.delete(teamId);
-//         d3.select(this).attr("fill", "green");
-//         vis.updateFilters();
-//     });
-    
-//     tokenDivs.append('span')
-//     .text(d => d.team_name)
-//     .attr('class','token-content');
-    
-//     tokenDivs.append('i')
-//     .attr('class','glyphicon glyphicon-remove');
-
-//     tokenData
-//     .exit()
-//     .remove();
-//   }
 }
