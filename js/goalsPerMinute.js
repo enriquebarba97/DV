@@ -8,6 +8,8 @@ class GoalsPerMinute {
         this.width = width - this.margin.left - this.margin.right;
         this.height = height - this.margin.top - this.margin.bottom;
 
+        this.teamColors = ['#e41a1c','#377eb8','#4daf4a','yellow']
+
         this.init();
     }
 
@@ -24,26 +26,31 @@ class GoalsPerMinute {
             "translate(" + vis.margin.left + "," + vis.margin.top + ")");
 
         // Initialize and draw X axis
-        vis.minutes = d3.scaleLinear()
-        .domain([0, 120])
+        vis.binGroups = ["0-15","15-30","30-45","45-60","60-75","75-90","90-105","105-120"]
+
+        vis.minutes = d3.scaleBand()
+        .domain(vis.binGroups)
         .range([0, vis.width]);
 
         vis.svg.append("g")
         .attr("transform", "translate(0," + vis.height + ")")
-        .call(d3.axisBottom(vis.minutes));
+        .call(d3.axisBottom(vis.minutes).tickSize(0))
+        .selectAll("text")
+        .attr("transform", "translate(-10,0)rotate(-45)")
+        .style("text-anchor", "end");
 
         // Initialize Y axis
         vis.y = d3.scaleLinear()
         .range([vis.height, 0]);
         vis.yAxis = vis.svg.append("g");
 
-        // Create histogram function
-        vis.histogram = d3.bin()
-        .value(function(d) { return d.minute_regulation; })   // I need to give the vector of value
-        .domain(vis.minutes.domain())  // then the domain of the graphic
-        .thresholds([15,30,45,60,75,90,105,120]); // 15 minutes intervals
+        vis.setData();
 
-        vis.activeData = vis.goalData;
+        // Create histogram function
+        // vis.histogram = d3.bin()
+        // .value(function(d) { return d.minute_regulation; })   // I need to give the vector of value
+        // .domain(vis.minutes.domain())  // then the domain of the graphic
+        // .thresholds([15,30,45,60,75,90,105,120]); // 15 minutes intervals
 
         vis.drawAxis();
         vis.drawBars();
@@ -53,7 +60,7 @@ class GoalsPerMinute {
     setData(){
         let vis = this;
 
-        if(vis.filter.length == 0){
+        if(vis.filters.length == 0){
             vis.activeData = this.goalData;
         } else{
             vis.activeData = this.goalData.filter(g => vis.filters.includes(g.team_id));
@@ -80,15 +87,33 @@ class GoalsPerMinute {
             }
             return goalData;
         });
+
+        if(vis.filters.length === 0){
+            vis.rolledData = d3.rollup(vis.activeData,v=>v.length,d=>d.minuteBin);
+        } else{
+            vis.rolledData = d3.rollup(vis.activeData,v=>v.length,d=>d.minuteBin,d=>d.team_id);
+        }
     }
 
     drawAxis(){
         let vis = this;
 
-        vis.bins = vis.histogram(vis.activeData);
+        //vis.bins = vis.histogram(vis.activeData);
+        let upperBound = 0;
+        if(vis.filters.length === 0){
+            for (const value of vis.rolledData.values()) {
+                upperBound = value > upperBound ? value:upperBound
+              }
+        }else{
+            for (const value of vis.rolledData.values()) {
+                for (const team of value.values()){
+                    upperBound = team > upperBound ? team:upperBound
+                }
+              }
+        }
 
         // Y axis: update now that we know the domain
-        vis.y.domain([0, d3.max(vis.bins, function(d) { return d.length; })]);   // d3.hist has to be called before the Y axis obviously
+        vis.y.domain([0, upperBound]);   // d3.hist has to be called before the Y axis obviously
         vis.yAxis
         .transition()
         .duration(1000)
@@ -96,29 +121,69 @@ class GoalsPerMinute {
     }
 
     drawBars(){
-        let vis = this;
-        vis.u = vis.svg.selectAll("rect")
-        .data(vis.bins);
+      let vis = this;
 
-        // Manage the existing bars and eventually the new ones:
-        vis.u
-        .join("rect") // Add a new rect for each new elements
+      // Another scale for subgroup position
+      const xSubgroup = d3
+        .scaleBand()
+        .domain(vis.filters)
+        .range([0, vis.minutes.bandwidth()])
+        .padding([0.1]);
+
+      // color palette = one color per subgroup
+      vis.color = d3
+        .scaleOrdinal()
+        .domain(vis.filters)
+        .range(vis.teamColors.slice(0, vis.length));
+
+      vis.svg.selectAll("rect").remove();
+
+      vis.svg
+        .append("g")
+        .selectAll("g")
+        // Enter in data = loop group per group
+        .data(vis.rolledData)
+        .join("g")
+        .attr("transform", (d) => `translate(${vis.minutes(d[0])}, 0)`)
+        .selectAll("rect")
+        .data(function (d) {
+          if (vis.filters.length === 0) {
+            return [{ key: "A", value: d[1] !== undefined ? d[1] : 0 }];
+          } else {
+            return vis.filters.map(function (key) {
+              let result = {
+                key: key,
+                value: d[1].get(key) !== undefined ? d[1].get(key) : 0,
+              };
+              return result;
+            });
+          }
+        })
+        .join("rect")
         .transition() // and apply changes to all of them
         .duration(1000)
-        .attr("x", 1)
-        .attr("transform", function(d) { return `translate(${vis.minutes(d.x0)}, ${vis.y(d.length)})`})
-        .attr("width", function(d) { return vis.minutes(d.x1) - vis.minutes(d.x0) -1 ; })
-        .attr("height", function(d) { 
-            return vis.height - vis.y(d.length); })
-        .style("fill", "#69b3a2");
+        .attr("x", (d) => (d.key === "A" ? 5 : xSubgroup(d.key)))
+        .attr("y", (d) => vis.y(d.value))
+        .attr("width", xSubgroup.bandwidth())
+        .attr("height", (d) => {
+          let result = vis.height - vis.y(d.value);
+          if (isNaN(result)) {
+            return 0;
+          }
+          return vis.height - vis.y(d.value);
+        })
+        .style("fill", (d) => {
+          if (vis.filters.length === 0) return "#69b3a2";
+          else return vis.color(d.key);
+        });
     }
 
     updateFilter(filteredTeams){
         let vis = this;
-        
-        vis.filters = filteredTeams;
-        vis.activeData = this.goalData.filter(g => filteredTeams.includes(g.team_id));
 
+        vis.filters = filteredTeams;
+
+        vis.setData();
         vis.drawAxis();
         vis.drawBars();
     }

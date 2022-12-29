@@ -2,6 +2,11 @@ var mapGlobal;
 var goalsPerMinuteGlobal;
 var teamData;
 
+function updateGoalChart(filters){
+    console.log(filters);
+    goalsPerMinuteGlobal.updateFilter(Array.from(filters));
+}
+
 Promise.all([d3.json('data/custom.geo.json'),
             d3.csv('data/teams.csv'),
             d3.csv('data/goals.csv')])

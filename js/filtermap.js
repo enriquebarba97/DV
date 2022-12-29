@@ -113,5 +113,7 @@ class FilterMap {
     tokenData
     .exit()
     .remove();
+
+    updateGoalChart(vis.selection);
   }
 }
