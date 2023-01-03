@@ -1,8 +1,9 @@
 class FilterMap {
-  constructor(parentId, geoData, teamData, width, height) {
+  constructor(parentId, geoData, teamData, qualifiedTeamsData, width, height) {
     this.parentId = parentId;
     this.geoData = geoData;
     this.teamData = teamData;
+    this.qualifiedTeamsData = qualifiedTeamsData;
     this.width = width;
     this.height = height
 
@@ -22,7 +23,7 @@ class FilterMap {
       .attr("id", "tokens")
       .attr("class", "wrapper");
 
-    this.tokens.selectAll('div')
+    vis.tokens.selectAll('div')
       .data(this.selection)
       .enter()
 
@@ -41,6 +42,11 @@ class FilterMap {
     //     .attr("stroke", "grey")
     //     .attr("d", path);
 
+    vis.colorScale = d3.scaleLinear()
+      .domain([0,22])
+      .range(["#fff5eb","#f57724"]);
+      
+
     var g = vis.svg.append("g");
 
     // load and display the World
@@ -52,7 +58,7 @@ class FilterMap {
       .attr("d", path)
       .attr("fill", function (d) {
         if (vis.teamData.some((t) => t.team_code === d.properties.su_a3)) {
-          return "green";
+          return vis.colorScale(vis.qualifiedTeamsData.filter(q => q.team_code === d.properties.su_a3).length);
         }
         return "grey";
       })
@@ -76,6 +82,10 @@ class FilterMap {
     vis.svg.call(zoom);
   }
 
+  calculateAppearances(team_code){
+
+  }
+
   updateFilters(team) {
     let vis = this;
 
@@ -85,7 +95,7 @@ class FilterMap {
     if (vis.selection.has(teamId)) {
         vis.selectedObjects.delete(team);
         vis.selection.delete(teamId);
-        d3.select('#' + countryCode).attr("fill", "green");
+        d3.select('#' + countryCode).attr("fill", vis.colorScale(vis.qualifiedTeamsData.filter(q => q.team_code === countryCode).length));
     } else {
         vis.selectedObjects.add(team);
         vis.selection.add(teamId);
@@ -98,7 +108,7 @@ class FilterMap {
 
     let tokenDivs = tokenData.enter()
     .append('div')
-    .attr('class', 'token label')
+    .attr('class', 'token')
     .on('click', (event,d) => {
         vis.updateFilters(d);
     });
@@ -108,12 +118,13 @@ class FilterMap {
     .attr('class','token-content');
     
     tokenDivs.append('i')
-    .attr('class','glyphicon glyphicon-remove');
+    .attr('class','bi bi-x-lg');
 
     tokenData
     .exit()
     .remove();
 
     updateGoalChart(vis.selection);
+    updateConsistencyChart(vis.selection);
   }
 }
