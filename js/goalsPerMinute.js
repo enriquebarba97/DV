@@ -4,7 +4,7 @@ class GoalsPerMinute {
         this.goalData = goalData;
         this.filters = [];
 
-        this.margin = {top: 10, right: 30, bottom: 30, left: 40};
+        this.margin = {top: 50, right: 30, bottom: 40, left: 40};
         this.width = width - this.margin.left - this.margin.right;
         this.height = height - this.margin.top - this.margin.bottom;
 
@@ -24,6 +24,13 @@ class GoalsPerMinute {
         .append("g")
         .attr("transform",
             "translate(" + vis.margin.left + "," + vis.margin.top + ")");
+
+        vis.svg.append("text")
+        .attr("x", 0)
+        .attr("y", -30)
+        .attr("text-anchor", "left")
+        .style("font-size", "22px")
+        .text("Number of goals, in bins of 15 minutes");
 
         // Initialize and draw X axis
         vis.binGroups = ["0-15","15-30","30-45","45-60","60-75","75-90","90-105","105-120"]
@@ -45,13 +52,6 @@ class GoalsPerMinute {
         vis.yAxis = vis.svg.append("g");
 
         vis.setData();
-
-        // Create histogram function
-        // vis.histogram = d3.bin()
-        // .value(function(d) { return d.minute_regulation; })   // I need to give the vector of value
-        // .domain(vis.minutes.domain())  // then the domain of the graphic
-        // .thresholds([15,30,45,60,75,90,105,120]); // 15 minutes intervals
-
         vis.drawAxis();
         vis.drawBars();
 
@@ -60,6 +60,7 @@ class GoalsPerMinute {
     setData(){
         let vis = this;
 
+        // No filters => all data
         if(vis.filters.length == 0){
             vis.activeData = this.goalData;
         } else{

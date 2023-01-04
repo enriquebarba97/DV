@@ -1,7 +1,15 @@
 class Heatmap {
     constructor(parentId, teamsData, goalData, matchData, width, height){
         this.parentId = parentId;
-        this.teamsData = teamsData;
+        this.teamsData = teamsData.sort((a,b)=>{
+          if (a.confederation_id < b.confederation_id) {
+            return -1;
+          }
+          if (a.confederation_id > b.confederation_id) {
+            return 1;
+          }
+          return 0;
+        });
         this.matchData = matchData;
         this.goalData = goalData;
 
@@ -72,6 +80,7 @@ class Heatmap {
         .style("border-width", "2px")
         .style("border-radius", "5px")
         .style("padding", "5px")
+        .style("position", "absolute");
     
       // Three function that change the tooltip when user hover / move / leave a cell
       const mouseover = function(event,d) {
@@ -84,8 +93,8 @@ class Heatmap {
       const mousemove = function(event,d) {
         tooltip
           .html(`${d.team1.teamName} vs ${d.team2.teamName}: Matches played: ${d.totalMatches}`)
-          .style("left", (event.x)/2 + "px")
-          .style("top", (event.y)/2 + "px")
+          .style("left", event.pageX + "px")
+          .style("top", event.pageY + "px")
       }
       const mouseleave = function(event,d) {
         tooltip
