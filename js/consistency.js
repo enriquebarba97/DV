@@ -7,7 +7,23 @@ class Consistency {
         this.goalData = goalData;
         this.filters = [];
 
-        this.margin = {top: 10, right: 30, bottom: 30, left: 40};
+        this.axisLeftOptions = [
+          {
+            text: "# new players",
+            selector: "newPlayers"
+          },{
+            text: "# defense",
+            selector: "defenders"
+          },{
+            text: "# midfielders",
+            selector: "midfielders"
+          },{
+            text: "# forward",
+            selector: "forward"
+        }];
+        this.axisRightOptions = ["Win rate","# Goals"];
+
+        this.margin = {top: 10, right: 30, bottom: 40, left: 40};
         this.width = width - this.margin.left - this.margin.right;
         this.height = height - this.margin.top - this.margin.bottom;
 
@@ -16,8 +32,31 @@ class Consistency {
         this.init();
     }
 
+    updateAxis(){
+      let vis = this;
+
+      if(vis.filters.length !== 0){
+        vis.drawAxis();
+        vis.drawBars();
+      }
+    }
+
     init(){
         let vis = this;
+
+        vis.selectLeft = d3
+        .select("#" + this.parentId)
+        .append("select")
+        .attr("class","form-select")
+        .style("align","top")
+        .on("change",d=>vis.updateAxis());
+
+        vis.optionsLeft = vis.selectLeft.selectAll("option")
+        .data(vis.axisLeftOptions)
+        .enter()
+        .append("option")
+        .text(d=>d.text)
+        .attr("value",d=>d.selector);
 
         vis.svg = d3
         .select("#" + this.parentId)
@@ -27,6 +66,19 @@ class Consistency {
         .append("g")
         .attr("transform",
             "translate(" + vis.margin.left + "," + vis.margin.top + ")");
+
+        vis.selectRight = d3
+        .select("#" + this.parentId)
+        .append("select")
+        .attr("class","form-select")
+        .style("align","top");
+    
+        vis.optionsRight = vis.selectRight.selectAll("option")
+        .data(vis.axisRightOptions)
+        .enter()
+        .append("option")
+        .text(d=>d)
+        .attr("value",d=>d);
 
         // // Initialize and draw X axis
         // vis.binGroups = ["0-15","15-30","30-45","45-60","60-75","75-90","90-105","105-120"]
@@ -41,6 +93,19 @@ class Consistency {
         .selectAll("text")
         .attr("transform", "translate(-10,0)rotate(-45)")
         .style("text-anchor", "end");
+
+        vis.svg.append("text")
+        .attr("class", "x label")
+        .attr("text-anchor", "end")
+        .attr("x", vis.width)
+        .attr("y", vis.height+vis.margin.bottom-5)
+        .text("Year");
+
+        vis.blankText = vis.svg.append("text")
+        .attr("text-anchor", "end")
+        .attr("x", vis.width/2)
+        .attr("y", vis.height/2)
+        .text("Select at least one team");
 
         // Initialize Y axis
         vis.y = d3.scaleLinear()
@@ -87,11 +152,18 @@ class Consistency {
 
           oldPlayers[teamId] = players;
 
+          let defenders = players.filter(p => p.position_code === "DF");
+          let midfielders = players.filter(p => p.position_code === "MF");
+          let forward = players.filter(p => p.position_code === "FW");
+
           previousTournament.teamsData.push({
             teamId: teamId,
             matches: matches,
             wonMatches: wonMatches,
-            newPlayers: []
+            newPlayers: [],
+            defenders: defenders,
+            midfielders: midfielders,
+            forward: forward
           });
 
         }
@@ -121,13 +193,21 @@ class Consistency {
               oldPlayers[teamId] = previousPlayers
             }
 
-            let newPlayers = vis.squadsData.filter(p =>  p.tournament_id===currentTournament.tournamentId && p.team_id === teamId && !previousPlayers.some(old=>old.player_id===p.player_id))
+            let players = vis.squadsData.filter(p => p.tournament_id===currentTournament.tournamentId && p.team_id === teamId);
+            let defenders = players.filter(p => p.position_code === "DF");
+            let midfielders = players.filter(p => p.position_code === "MF");
+            let forward = players.filter(p => p.position_code === "FW");
+
+            let newPlayers = players.filter(p => !previousPlayers.some(old=>old.player_id===p.player_id));
             
             currentTournament.teamsData.push({
               teamId: teamId,
               matches: matches,
               wonMatches: wonMatches,
-              newPlayers: newPlayers
+              newPlayers: newPlayers,
+              defenders: defenders,
+              midfielders: midfielders,
+              forward: forward
             });
             
           }
@@ -136,21 +216,20 @@ class Consistency {
 
         }
 
-        console.log(data);
-
         vis.activeData = data;
     }
 
     drawAxis(){
         let vis = this;
 
+        let leftSelector = vis.selectLeft.property("value");
         //vis.bins = vis.histogram(vis.activeData);
         let upperBound = 0;
         let upperBound2 = 0;
         if(vis.filters.length !== 0){
           for (const tournament of vis.activeData) {
             for(const teamData of tournament.teamsData){
-              upperBound = teamData.newPlayers.length > upperBound ? teamData.newPlayers.length:upperBound;
+              upperBound = teamData[leftSelector].length > upperBound ? teamData[leftSelector].length:upperBound;
 
               let winRate = teamData.wonMatches==0 ? 0:100*teamData.wonMatches.length/teamData.matches.length;
               upperBound2 = winRate > upperBound ? winRate:upperBound;
@@ -159,7 +238,7 @@ class Consistency {
           }
 
           // Y axis: update now that we know the domain
-          vis.y.domain([0, upperBound*1.5]);   // d3.hist has to be called before the Y axis obviously
+          vis.y.domain([0, upperBound*3]);   // d3.hist has to be called before the Y axis obviously
           vis.yAxis
           .transition()
           .duration(1000)
@@ -175,6 +254,56 @@ class Consistency {
 
     drawBars(){
       let vis = this;
+
+      let leftSelector = vis.selectLeft.property("value");
+
+      const tooltip = d3.select("#"+vis.parentId)
+        .append("div")
+        .style("opacity", 0)
+        .attr("class", "customTooltip")
+        .style("background-color", "white")
+        .style("border", "solid")
+        .style("border-width", "2px")
+        .style("border-radius", "5px")
+        .style("padding", "5px")
+    
+      // Three function that change the tooltip when user hover / move / leave a cell
+      const mouseover = function(event,d) {
+        tooltip
+          .style("opacity", 1)
+        d3.select(this)
+          .style("stroke", "black")
+          .style("opacity", 1)
+      }
+      const mousemove = function(event,d) {
+        tooltip
+          .html(`<div class="card" style="width: 18rem;">
+          <div class="card-header">
+            Featured
+          </div>
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">An item</li>
+            <li class="list-group-item">A second item</li>
+            <li class="list-group-item">A third item</li>
+          </ul>
+        </div>`)
+          .style("left", event.pageX + "px")
+          .style("top", event.pageY + "px")
+      }
+      const mouseleave = function(event,d) {
+        tooltip
+          .style("opacity", 0)
+          .style("left", vis.width + "px")
+          .style("top", vis.height + "px");
+        d3.select(this)
+          .style("stroke", "none")
+          .style("opacity", d => {
+            if(d.totalMatches==0)
+              return 0;
+            else
+              return 0.6;
+          })
+      }
 
       // Another scale for subgroup position
       const xSubgroup = d3
@@ -192,62 +321,78 @@ class Consistency {
       vis.svg.selectAll("rect").remove();
       vis.svg.selectAll("circle").remove();
 
-      vis.groups = vis.svg
-        .append("g")
-        .selectAll("g")
-        // Enter in data = loop group per group
-        .data(vis.activeData)
-        .join("g")
-        .attr("transform", (d) => `translate(${vis.x(d.year)}, 0)`);
-      
-      vis.groups.selectAll("rect")
-        .data(function (d) {
-          if (vis.filters.length === 0) {
-            //return [{ key: "A", value: d[1] !== undefined ? d[1] : 0 }];
-          } else {
-            return d.teamsData;
-          }
-        })
-        .join("rect")
-        .transition() // and apply changes to all of them
-        .duration(1000)
-        .attr("x", (d) => {
-          console.log(d.teamId)
-          return xSubgroup(d.teamId);
-        })
-        .attr("y", (d) => vis.y(d.newPlayers.length))
-        .attr("width", xSubgroup.bandwidth())
-        .attr("height", (d) => {
-          let result = vis.height - vis.y(d.newPlayers.length);
-          if (isNaN(result)) {
-            return 0;
-          }
-          return vis.height - vis.y(d.newPlayers.length);
-        })
-        .style("fill", (d) => {
-          if (vis.filters.length === 0) return "#69b3a2";
-          else{ 
-            console.log(vis.color(d.key));
-            return vis.color(d.teamId);
-          }
-        })
-        .style("opacity", "60%");
+      if (vis.filters.length !== 0) {
+        vis.blankText
+        .style("opacity","0");
 
-      vis.groups
-      .selectAll("myPoints")
-      .data(d => d.teamsData,d=>d.teamId)
-      .join("circle")
-        .attr("cx", d => xSubgroup(d.teamId) + xSubgroup.bandwidth()/2)
-        .attr("cy", d => vis.y2(d.wonMatches==0 ? 0:100*d.wonMatches.length/d.matches.length))
-        .attr("r", 5)
-        .attr("stroke", "white")
-        .style("fill", d => vis.color(d.teamId))
-        .style("opacity",d=>{
-          if(d.matches.length===0)
-            return "0%";
-          else
-            return "100%";
-        })
+        vis.groups = vis.svg
+          .append("g")
+          .selectAll("g")
+          // Enter in data = loop group per group
+          .data(vis.activeData)
+          .join("g")
+          .attr("transform", (d) => `translate(${vis.x(d.year)}, 0)`);
+
+        vis.groups
+          .selectAll("rect")
+          .data(function (d) {
+            if (vis.filters.length === 0) {
+              //return [{ key: "A", value: d[1] !== undefined ? d[1] : 0 }];
+            } else {
+              return d.teamsData;
+            }
+          })
+          .join("rect")
+          .on("mouseover", mouseover)
+          .on("mousemove", mousemove)
+          .on("mouseleave", mouseleave)
+          .transition() // and apply changes to all of them
+          .duration(1000)
+          .attr("x", (d) => {
+            return xSubgroup(d.teamId);
+          })
+          .attr("y", (d) => vis.y(d[leftSelector].length))
+          .attr("width", xSubgroup.bandwidth())
+          .attr("height", (d) => {
+            let result = vis.height - vis.y(d[leftSelector].length);
+            if (isNaN(result)) {
+              return 0;
+            }
+            return vis.height - vis.y(d[leftSelector].length);
+          })
+          .style("fill", (d) => {
+            if (vis.filters.length === 0) return "#69b3a2";
+            else {
+              return vis.color(d.teamId);
+            }
+          })
+          .style("opacity", "60%");
+
+        vis.groups
+          .selectAll("myPoints")
+          .data(
+            (d) => d.teamsData,
+            (d) => d.teamId
+          )
+          .join("circle")
+          .attr("cx", (d) => xSubgroup(d.teamId) + xSubgroup.bandwidth() / 2)
+          .attr("cy", (d) =>
+            vis.y2(
+              d.wonMatches == 0
+                ? 0
+                : (100 * d.wonMatches.length) / d.matches.length
+            )
+          )
+          .attr("r", 5)
+          .attr("stroke", "white")
+          .style("fill", (d) => vis.color(d.teamId))
+          .style("opacity", (d) => {
+            if (d.matches.length === 0) return "0%";
+            else return "100%";
+          });
+      } else {
+        vis.blankText.style("opacity", "1");
+      }
     }
 
     updateFilter(filteredTeams){

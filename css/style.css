@@ -1,52 +1,70 @@
-@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css");
 
 body {
-    margin: 0;
-    background-color: #2A2C39;
-    font-family: 'Yanone Kaffeesatz', sans-serif;
-    font-weight: 200;
-    font-size: 17px;
-  }
-  #map-holder {
-    width: 50vw;
-    height: 50vh;
-  }
-  svg rect {
-    fill: #2A2C39;   /* map background colour */
-  }
-  .country{
-    fill: #d0d0d0;   /* country colour */
-    stroke: #2A2C39; /* country border colour */
-    stroke-width: 1; /* country border width */
-  }
-  .country-on{
-    fill: #4B5358;   /* highlight colour for selected country */
-  }
-  .countryLabel{
-    display: none;   /* hide all country labels by default */
-  }
-  .countryName{
-    fill: #FFFAFF;   /* country label text colour */
-  }
-  .countryLabelBg{
-    fill: #30BCED;   /* country label background colour */
-  }
+  margin: 0;
+  background-color: #2A2C39;
+  font-family: 'Yanone Kaffeesatz', sans-serif;
+  font-weight: 200;
+  font-size: 17px;
+}
 
-  .token {
-    background: olive;
-    margin-left: 2px;
-    display: inline;
-    padding: .2em .6em .3em;
-    font-size: 75%;
-    font-weight: 700;
-    line-height: 1;
-    color: #fff;
-    text-align: center;
-    white-space: nowrap;
-    vertical-align: baseline;
-    border-radius: .25em;
-  }
-  
-  .token-content {
-    padding-right: 2px;
-  }
+#map-holder {
+  width: 50vw;
+  height: 50vh;
+}
+
+svg rect {
+  fill: #2A2C39;
+  /* map background colour */
+}
+
+.country {
+  fill: #d0d0d0;
+  /* country colour */
+  stroke: #2A2C39;
+  /* country border colour */
+  stroke-width: 1;
+  /* country border width */
+}
+
+.country-on {
+  fill: #4B5358;
+  /* highlight colour for selected country */
+}
+
+.countryLabel {
+  display: none;
+  /* hide all country labels by default */
+}
+
+.countryName {
+  fill: #FFFAFF;
+  /* country label text colour */
+}
+
+.countryLabelBg {
+  fill: #30BCED;
+  /* country label background colour */
+}
+
+.token {
+  margin-left: 2px;
+  display: inline;
+  padding: .2em .6em .3em;
+  font-size: 75%;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: .25em;
+}
+
+.token-content {
+  padding-right: 2px;
+}
+
+.customTooltip {
+  position: absolute;
+  z-index: 1000;
+}
