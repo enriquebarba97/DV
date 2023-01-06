@@ -296,7 +296,7 @@ class Consistency {
           console.log(upperBound2);
 
           // Y axis: update now that we know the domain
-          vis.y.domain([0, upperBound*3]);   // d3.hist has to be called before the Y axis obviously
+          vis.y.domain([0, upperBound*3]);
           vis.yAxis
           .transition()
           .duration(1000)
@@ -332,6 +332,7 @@ class Consistency {
       const mouseover = function(event,d) {
         let team = vis.teamsData.find(t=>t.team_id === d.teamId);
 
+        // Get top 3 scorers in counted players
         let playersSorted = d[leftSelector].sort((a,b)=>{
           if(a.numberOfGoals<b.numberOfGoals)
             return -1;
@@ -340,6 +341,7 @@ class Consistency {
           return b.given_name.localeCompare(a.given_name);
         }).reverse();
 
+        // Write HTML
         let html = `<div class="card" style="width: 18rem;">
         <div class="card-header">
           <b>${team.team_name} top scorers in selected category (${d.tournamentId.substring(3)})</b>
@@ -360,11 +362,13 @@ class Consistency {
           .style("stroke", "black")
           .style("opacity", 1)
       }
+
       const mousemove = function(event,d) {
         tooltip
           .style("left", event.pageX + "px")
           .style("top", event.pageY + "px")
       }
+
       const mouseleave = function(event,d) {
         tooltip
           .style("opacity", 0)

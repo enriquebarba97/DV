@@ -26,5 +26,4 @@ Promise.all([d3.json('data/custom.geo.json'),
             mapGlobal = new FilterMap('map-holder',loaded[0],teamData,loaded[6],loaded[7],loaded[4],700,400);
             goalsPerMinuteGlobal = new GoalsPerMinute('goals-per-minute',loaded[2],672,400);
             consistencyGlobal = new Consistency("consistency",loaded[3],loaded[1],loaded[2],loaded[4],loaded[5],672*2,350*2);
-            heatmapGlobal = new Heatmap('heatmap',teamData,loaded[2],loaded[4],600,600);
         });

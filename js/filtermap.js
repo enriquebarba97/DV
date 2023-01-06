@@ -34,6 +34,7 @@ class FilterMap {
       .data(this.selection)
       .enter()
 
+      // Tooltip on hover
       const tooltip = d3.select("#"+vis.parentId)
       .append("div")
       .style("opacity", 0)
@@ -52,6 +53,7 @@ class FilterMap {
         let wonChampionships = team.champions.length;
         let wonString = "";
         
+        // Build string with won years
         if(wonChampionships != 0){
           wonString += "(";
           for(let standing of team.champions){
@@ -74,11 +76,13 @@ class FilterMap {
         d3.select(this).style("stroke", "black").style("opacity", 1);
       }
     }
+
     const mousemove = function(event,d) {
       tooltip
         .style("left", event.pageX + "px")
         .style("top", event.pageY + "px")
     }
+
     const mouseleave = function(event,d) {
       tooltip
         .style("opacity", 0)
@@ -102,17 +106,10 @@ class FilterMap {
 
     var path = d3.geoPath().projection(projection);
 
-    // let grid = vis.svg.append("g").append("path")
-    //     .datum(d3.geoGraticule())
-    //     .attr("class", "graticule")
-    //     .attr('fill', '#fff')
-    //     .attr("stroke", "grey")
-    //     .attr("d", path);
-
+    // scale for number of appearances
     vis.colorScale = d3.scaleLinear()
       .domain([0,22])
-      .range(["#fff5eb","#f57724"]);
-      
+      .range(["#fff5eb","#f57724"]);   
 
     var g = vis.svg;
 
@@ -133,6 +130,7 @@ class FilterMap {
       .attr("stroke-width", 0.3)
       .attr("stroke", "#ff0000")
       .on("click", function (event, d) {
+        // exclude countries that never played
         let team = vis.teamData.find((t) => t.team_code == d.properties.su_a3);
         if(team !== undefined){
             vis.updateFilters(team);
@@ -142,11 +140,11 @@ class FilterMap {
       .on("mousemove", mousemove)
       .on("mouseleave", mouseleave);
 
+    // Zoom function
     var zoom = d3
       .zoom()
       .scaleExtent([1, 8])
       .on("zoom", function (event, d) {
-        //grid.attr('transform', event.transform);
         g.selectAll("path").attr("transform", event.transform);
       });
 
@@ -156,17 +154,19 @@ class FilterMap {
   setData(){
     let vis = this;
     let data = [];
+
+    // Build a basic data structure for each team
     for(let team of vis.teamData){
       let item = {
         teamId: team.team_id,
         teamCode: team.team_code,
         teamName: team.team_name,
       }
+      // Bumber of appearances and tournament victories
       item.appearances = vis.qualifiedTeamsData.filter(q => q.team_code === team.team_code).length;
       item.champions = vis.tournamentStandingsData.filter(s => s.team_code === team.team_code && s.position == 1);
       
       // Get Win/Draw/Lose matches
-
       let matches = vis.matchData.filter(m => (m.home_team_code===team.team_code || m.away_team_code===team.team_code));
 
       let wonMatches = matches.filter(m=>(m.home_team_code===team.team_code && m.home_team_win==1) || (m.away_team_code==team.team_code && m.away_team_win==1));
@@ -191,20 +191,23 @@ class FilterMap {
     let teamId = team.team_id;
     let countryCode = team.team_code;
 
+    // Add or delete clicked team from filter array
     if (vis.selection.has(teamId)) {
         vis.selectedObjects.delete(team);
         vis.selection.delete(teamId);
-        d3.select('#' + countryCode).attr("fill", vis.colorScale(vis.qualifiedTeamsData.filter(q => q.team_code === countryCode).length));
+        d3.select('#' + countryCode).attr("fill", vis.colorScale(vis.qualifiedTeamsData.filter(q => q.team_code === countryCode).length)); // Recolor unselected
     } else if(vis.selection.size < 3){
         vis.selectedObjects.add(team);
         vis.selection.add(teamId);
-        //d3.select('#' + countryCode).attr("fill", "yellow");
     }
+
+    // Color selected countries with the same colors as the graphs
     let selectedArray = Array.from(vis.selectedObjects);
     for(let i = 0; i<selectedArray.length;i++){
       d3.select('#' + selectedArray[i].team_code).attr("fill", teamColors[i]);
     }
 
+    // Tokens in top of the map
     let tokenData = d3.select('#tokens')
     .selectAll('div')
     .data(this.selectedObjects,d => d.team_id)
@@ -229,6 +232,7 @@ class FilterMap {
     .exit()
     .remove();
 
+    // Update graphs
     updateGoalChart(vis.selection);
     updateConsistencyChart(vis.selection);
   }

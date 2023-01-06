@@ -67,6 +67,7 @@ class GoalsPerMinute {
             vis.activeData = this.goalData.filter(g => vis.filters.includes(g.team_id));
         }
 
+        // Group goals into the bins
         vis.activeData = vis.activeData.map(g =>{
             let goalData = g;
             if(g.minute_regulation >=0 && g.minute_regulation <= 15){
@@ -99,7 +100,7 @@ class GoalsPerMinute {
     drawAxis(){
         let vis = this;
 
-        //vis.bins = vis.histogram(vis.activeData);
+        // Calculate maximum value to adjust Y axis
         let upperBound = 0;
         if(vis.filters.length === 0){
             for (const value of vis.rolledData.values()) {
@@ -114,7 +115,7 @@ class GoalsPerMinute {
         }
 
         // Y axis: update now that we know the domain
-        vis.y.domain([0, upperBound]);   // d3.hist has to be called before the Y axis obviously
+        vis.y.domain([0, upperBound]);
         vis.yAxis
         .transition()
         .duration(1000)
@@ -131,7 +132,7 @@ class GoalsPerMinute {
         .range([0, vis.minutes.bandwidth()])
         .padding([0.1]);
 
-      // color palette = one color per subgroup
+      // color palette = one color per team
       vis.color = d3
         .scaleOrdinal()
         .domain(vis.filters)
@@ -139,14 +140,14 @@ class GoalsPerMinute {
 
       vis.svg.selectAll("rect").remove();
 
+      // Bin groups
       vis.svg
         .append("g")
         .selectAll("g")
-        // Enter in data = loop group per group
         .data(vis.rolledData)
         .join("g")
         .attr("transform", (d) => `translate(${vis.minutes(d[0])}, 0)`)
-        .selectAll("rect")
+        .selectAll("rect") // Teams subgroup
         .data(function (d) {
           if (vis.filters.length === 0) {
             return [{ key: "A", value: d[1] !== undefined ? d[1] : 0 }];
@@ -161,9 +162,9 @@ class GoalsPerMinute {
           }
         })
         .join("rect")
-        .transition() // and apply changes to all of them
+        .transition()
         .duration(1000)
-        .attr("x", (d) => (d.key === "A" ? 5 : xSubgroup(d.key)))
+        .attr("x", (d) => (d.key === "A" ? 5 : xSubgroup(d.key))) // No filters, one group
         .attr("y", (d) => vis.y(d.value))
         .attr("width", xSubgroup.bandwidth())
         .attr("height", (d) => {
@@ -174,7 +175,7 @@ class GoalsPerMinute {
           return vis.height - vis.y(d.value);
         })
         .style("fill", (d) => {
-          if (vis.filters.length === 0) return "#69b3a2";
+          if (vis.filters.length === 0) return "#69b3a2"; // Color with no filters
           else return vis.color(d.key);
         });
     }
