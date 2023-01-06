@@ -1,37 +1,45 @@
+h3 {
+  text-shadow: 2px 2px 8px #0FDAAD;
+}
 
-body {
-    margin: 0;
-    background-color: #2A2C39;
-    font-family: 'Yanone Kaffeesatz', sans-serif;
-    font-weight: 200;
-    font-size: 17px;
-  }
-  #map-holder {
+#map-holder {
     width: 30vw;
     height: 30vh;
   }
-  svg rect {
+
+#consistency {
+  margin-top: 5rem;
+  padding-left: 20px;
+  grid-column: span 2;
+}
+
+svg rect {
     fill: #2A2C39;   /* map background colour */
-  }
-  .country{
+}
+
+.country{
     fill: #d0d0d0;   /* country colour */
     stroke: #2A2C39; /* country border colour */
     stroke-width: 1; /* country border width */
-  }
-  .country-on{
-    fill: #4B5358;   /* highlight colour for selected country */
-  }
-  .countryLabel{
-    display: none;   /* hide all country labels by default */
-  }
-  .countryName{
-    fill: #FFFAFF;   /* country label text colour */
-  }
-  .countryLabelBg{
-    fill: #30BCED;   /* country label background colour */
-  }
+}
 
-  .token {
+.country-on{
+    fill: #4B5358;   /* highlight colour for selected country */
+}
+
+.countryLabel{
+    display: none;   /* hide all country labels by default */
+}
+
+.countryName{
+    fill: #FFFAFF;   /* country label text colour */
+}
+
+.countryLabelBg{
+    fill: #30BCED;   /* country label background colour */
+}
+
+.token {
     background: olive;
     margin-left: 2px;
     display: inline;
@@ -44,35 +52,34 @@ body {
     white-space: nowrap;
     vertical-align: baseline;
     border-radius: .25em;
-  }
+}
   
-  .token-content {
+.token-content {
     padding-right: 2px;
-  }
+}
 
-  .customTooltip {
+.customTooltip {
     position: absolute;
     z-index: 1000;
     font-size: 15px;
-  }
-
-* {
-  margin: 0;
-  padding: 0;
 }
+
 .imgbox {
   display: grid;
   height: 100%;
 }
+
 .center-fit {
   max-width: 100%;
   max-height: 100vh;
   margin: auto;
 }
+
 .gfg {
   margin: 3%;
   position: relative;
 }
+
 .first-txt {
   font-family: "American Typewriter";
   font-style: italic;
@@ -83,9 +90,6 @@ body {
   font-size:80px;
   margin:10px;
   color: floralwhite;
-}
-h3 {
-  text-shadow: 2px 2px 8px #0FDAAD;
 }
 
 .item-intro {
@@ -116,8 +120,3 @@ h3 {
   font-size: 30px;
 }
 
-#consistency {
-  margin-top: 5rem;
-  padding-left: 20px;
-  grid-column: span 2;
-}
