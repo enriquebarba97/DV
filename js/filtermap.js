@@ -1,12 +1,14 @@
 class FilterMap {
-  constructor(parentId, geoData, teamData, qualifiedTeamsData, tournamentStandingsData, width, height) {
+  constructor(parentId, geoData, teamData, qualifiedTeamsData, tournamentStandingsData, matchData, width, height) {
     this.parentId = parentId;
     this.geoData = geoData;
     this.teamData = teamData;
     this.qualifiedTeamsData = qualifiedTeamsData;
     this.tournamentStandingsData = tournamentStandingsData;
+    this.matchData = matchData;
     this.width = width;
     this.height = height;
+    this.margin = {top: 50, right: 30, bottom: 40, left: 40};
 
     var teamColors = ['#e41a1c','#377eb8','#4daf4a'];
 
@@ -65,6 +67,7 @@ class FilterMap {
         </div>
         <ul class="list-group list-group-flush">
           <li class="list-group-item">Appearances: ${team.appearances}</li>
+          <li class="list-group-item">Matches (W/D/L): ${team.totalMatches} (${team.wonMatches}/${team.draws}/${team.lostMatches})</li>
           <li class="list-group-item">Won championships: ${wonChampionships} ${wonString}</li>
         </ul>
         </div>`);
@@ -82,7 +85,7 @@ class FilterMap {
         .style("left", vis.width + "px")
         .style("top", vis.height + "px");
       d3.select(this)
-        .style("stroke", "none")
+        .style("stroke", "red")
         .style("opacity", d => {
           if(d.totalMatches==0)
             return 0;
@@ -111,7 +114,7 @@ class FilterMap {
       .range(["#fff5eb","#f57724"]);
       
 
-    var g = vis.svg.append("g");
+    var g = vis.svg;
 
     // load and display the World
     g.selectAll("path")
@@ -161,7 +164,21 @@ class FilterMap {
       }
       item.appearances = vis.qualifiedTeamsData.filter(q => q.team_code === team.team_code).length;
       item.champions = vis.tournamentStandingsData.filter(s => s.team_code === team.team_code && s.position == 1);
+      
+      // Get Win/Draw/Lose matches
 
+      let matches = vis.matchData.filter(m => (m.home_team_code===team.team_code || m.away_team_code===team.team_code));
+
+      let wonMatches = matches.filter(m=>(m.home_team_code===team.team_code && m.home_team_win==1) || (m.away_team_code==team.team_code && m.away_team_win==1));
+
+      let lostMatches = matches.filter(m=>(m.home_team_code===team.team_code && m.away_team_win==1) || (m.away_team_code==team.team_code && m.home_team_win==1));
+
+      let draws = matches.filter(m=>m.draw==1);
+
+      item.totalMatches = matches.length;
+      item.wonMatches = wonMatches.length;
+      item.lostMatches = lostMatches.length;
+      item.draws = draws.length
       data.push(item);
     }
 
@@ -195,6 +212,7 @@ class FilterMap {
     let tokenDivs = tokenData.enter()
     .append('div')
     .attr('class', 'token')
+    .style("font-size", "15px")
     .style('background',(d,i) => teamColors[i])
     .on('click', (event,d) => {
         vis.updateFilters(d);

@@ -58,12 +58,29 @@ class Consistency {
         vis.selectLeft = d3
         .select("#" + this.parentId)
         .append("select")
-        .attr("class","form-select")
-        .style("align","top")
+        .attr("class","form-select d-inline-block")
+        .style("width","20%")
+        .style("float","left")
         .on("change",d=>vis.updateAxis());
 
         vis.optionsLeft = vis.selectLeft.selectAll("option")
         .data(vis.axisLeftOptions)
+        .enter()
+        .append("option")
+        .text(d=>d.text)
+        .attr("value",d=>d.selector);
+
+        // Selector right axis
+        vis.selectRight = d3
+        .select("#" + this.parentId)
+        .append("select")
+        .attr("class","form-select d-inline-block")
+        .style("width","20%")
+        .style("float","right")
+        .on("change",d=>vis.updateAxis());
+
+        vis.optionsRight = vis.selectRight.selectAll("option")
+        .data(vis.axisRightOptions)
         .enter()
         .append("option")
         .text(d=>d.text)
@@ -81,35 +98,20 @@ class Consistency {
 
         vis.svg.append("text")
         .attr("x", 0)
-        .attr("y", -30)
+        .attr("y", 10)
         .attr("text-anchor", "left")
         .style("font-size", "22px")
         .text("Performance and player data");
 
-        // Selector right axis
-        vis.selectRight = d3
-        .select("#" + this.parentId)
-        .append("select")
-        .attr("class","form-select")
-        .style("align","top")
-        .on("change",d=>vis.updateAxis());
-    
-        vis.optionsRight = vis.selectRight.selectAll("option")
-        .data(vis.axisRightOptions)
-        .enter()
-        .append("option")
-        .text(d=>d.text)
-        .attr("value",d=>d.selector);
-
-        
         // Draw x axis (years)
         vis.x = d3.scaleBand()
         .domain(vis.tournamentData.map(t => t.year))
-        .range([0, vis.width]);
+        .range([0, vis.width])
+        .padding(0.1);
 
         vis.svg.append("g")
         .attr("transform", "translate(0," + vis.height + ")")
-        .call(d3.axisBottom(vis.x).tickSize(0))
+        .call(d3.axisBottom(vis.x))
         .selectAll("text")
         .attr("transform", "translate(-10,0)rotate(-45)")
         .style("text-anchor", "end");
@@ -162,7 +164,7 @@ class Consistency {
           let matches = vis.matchData.filter(m => m.tournament_id===vis.tournamentData[0].tournament_id && (m.home_team_id===teamId || m.away_team_id===teamId));
           
           // won matches
-          let wonMatches = matches.filter(m=>(m.home_team_id===teamId && m.home_team_win===1) || (m.away_team_id===teamId && m.away_team_win===1));
+          let wonMatches = matches.filter(m=>(m.home_team_id===teamId && m.home_team_win==1) || (m.away_team_id===teamId && m.away_team_win==1));
 
           // win rate
           let winRate = wonMatches==0 ? 0:100*wonMatches.length/matches.length;
@@ -264,7 +266,6 @@ class Consistency {
               forward: forward,
               totalGoals: goals.length
             });
-            
           }
 
           data.push(currentTournament);
@@ -288,10 +289,11 @@ class Consistency {
             for(const teamData of tournament.teamsData){
               upperBound = teamData[leftSelector].length > upperBound ? teamData[leftSelector].length:upperBound;
 
-              upperBound2 = teamData[rightSelector] > upperBound ? teamData[rightSelector]:upperBound;
+              upperBound2 = teamData[rightSelector] > upperBound2 ? teamData[rightSelector]:upperBound2;
 
             }
           }
+          console.log(upperBound2);
 
           // Y axis: update now that we know the domain
           vis.y.domain([0, upperBound*3]);   // d3.hist has to be called before the Y axis obviously
@@ -314,6 +316,7 @@ class Consistency {
 
       let leftSelector = vis.selectLeft.property("value");
       let rightSelector = vis.selectRight.property("value");
+      console.log(rightSelector);
 
       // Tooltip div and functions
       const tooltip = d3.select("#"+vis.parentId)

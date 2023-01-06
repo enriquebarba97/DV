@@ -53,6 +53,7 @@ body {
   .customTooltip {
     position: absolute;
     z-index: 1000;
+    font-size: 15px;
   }
 
 * {
@@ -115,6 +116,8 @@ h3 {
   font-size: 30px;
 }
 
-
-
-
+#consistency {
+  margin-top: 5rem;
+  padding-left: 20px;
+  grid-column: span 2;
+}
